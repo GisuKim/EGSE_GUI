@@ -59,12 +59,18 @@ class OwnImageWidget(QWidget):
             qp.drawImage(QtCore.QPoint(0, 0), self.image)
         qp.end()
 
+## ContrilDisplay class.
+#
+# 이미지를 변환 하여 PyQT의 Widget에 표시한다.
 class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
+    ## Class Variable
+    isConnect = False
     imageFname = ''
     img = ()
     frame={}
 
+    ## Constructor
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -81,10 +87,15 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         self.btn_msg_02.clicked.connect(self.MessageSend1)       #Teset 버튼
         self.btn_send_image.clicked.connect(self.ImageSendButtonClicked) #d이미지 전송 시작
 
+    ## 정보표시창 에 이벤트 발생 시간 및 이벤트를 표시 한다.
+    #  @param self The object pointer.
+    #  @param _message 정보표시 창에 입력할 문자열
     def SetConsoleMessage(self, _message):
         self.pte_console.appendPlainText(QtCore.QTime.currentTime().toString() + ' : ' + _message)
 
-
+    ## 이미지 파일 open 시 경로를 저장한다.
+    #  @param self The object pointer.
+    #  @param _message 정보표시 창에 입력할 문자열
     def SetSendImageFileName(self, _fname):
         self.imageFname = _fname
 
@@ -189,13 +200,16 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
     def handle_connect(self):
         print("connected")
+        self.isConnect = True       #Socket이 Serverdp Access 되었음을 알린다.
         self.SetConsoleMessage(str(self.address) + ' ' + 'New Connection')
         self.logger.debug('handle_connect()')
 
     def handle_close(self):
+        self.isConnect = False       #Socket이 Close 되었음을 알린다.
         self.SetConsoleMessage(str(self.address) + ' ' + 'Socket Closed')
         self.logger.debug('handle_close()')
         self.close()
+
 
     # def writable(self):
     #     is_writable = (len(self.write_buffer) > 0)
@@ -203,7 +217,7 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
     #         pass
     #         self.logger.debug('writable() -> %s', is_writable)
     #     return is_writable
-    #
+
     # def readable(self):
     #     self.logger.debug('readable() -> True')
     #     return True
@@ -218,7 +232,6 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         self.logger.debug('handle_read() -> %d bytes', len(data))
         if data.decode()=="RX_TEST_IMAGE":
             self.ImageSendStart()
-
         # self.read_buffer.write(data)
 
 capture_thread = threading.Thread(target=grab, args = (0, q, sendq, 320, 240, 1))

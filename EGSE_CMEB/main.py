@@ -11,7 +11,6 @@ class connetInfo(object):
     egseIP = "192.168.10.26"
     egsePort = 8000
 
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG,
                         format='%(name)s: %(message)s',

@@ -7,6 +7,7 @@ from PyQt5 import uic
 from PyQt5 import QtCore
 import OpenSetting
 import logging
+import time
 import cv2
 
 mainWindowWidget = uic.loadUiType("windowMain.ui")[0]
@@ -31,6 +32,8 @@ class MainWindow(QMainWindow, mainWindowWidget):
         self.NewSetting.show()
         self.showMinimized()
 
+
+
     def OpenImageFile(self):
         print("open clicked")
         dlg = QFileDialog(self)
@@ -46,15 +49,12 @@ class MainWindow(QMainWindow, mainWindowWidget):
     def btnConnectClicked(self):
         print("connect clicked")
         adress = self.NewSetting.GetIP()
-        print(adress)
-        if self.MyControll.connectSocket(adress[2], adress[3]) == 1:
+        self.MyControll.connectSocket(adress[2], adress[3])
+        time.sleep(1)
+        if self.MyControll.isConnect:
             self.NewSetting.close()
             self.showNormal()
             self.setCentralWidget(self.MyControll)
-            self.isConnect = True
-        else:
-            self.isConnect = False
-
 
     def btnCancelClicked(self):
         print("cancel clicked")
