@@ -57,7 +57,9 @@ class OwnImageWidget(QWidget):
         qp.begin(self)
         if self.image:
             qp.drawImage(QtCore.QPoint(0, 0), self.image)
+
         qp.end()
+
 
 ## ContrilDisplay class.
 #
@@ -79,7 +81,6 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         self.window_width = self.ImgWidget.frameSize().width()
         self.window_height = self.ImgWidget.frameSize().height()
         self.ImgWidget = OwnImageWidget(self.ImgWidget)
-
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(1)
@@ -101,7 +102,7 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
     def ShowOpenImage(self):
         self.img = cv2.imread(self.imageFname[0], 1)      #파일오픈
-        # self.img = cv2.cvtColor(self.img, cv2.COLOR_BGR2BGR565)  # 컬러포맷 변경 3->2 byte
+        self.img = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)  # 컬러포맷 변경 3->2 byte
         self.frame["img"] = self.img
         self.ImgWidget.setImage(self.image_Transfrom(self.frame))
         self.SetConsoleMessage(self.imageFname[0] + " is Opened")
