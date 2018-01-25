@@ -6,8 +6,8 @@ openWidget = uic.loadUiType("OpenSettingWidget.ui")[0]
 
 class OpenSetting(QWidget, openWidget):
 
-    cmebIP = "192.168.10.10"
-    cmebPort = 7000
+    cmebIP = "192.168.10.201"
+    cmebPort = 70
     egseIP = "192.168.10.13"
     egsePort = 70
 

@@ -6,6 +6,36 @@ import time
 from PyQt5 import QtCore
 from io import StringIO
 
+class CMEBClient(asyncore.dispatcher):
+
+    address = ()
+    def __init__(self):
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.write_buffer = 'hellow'
+        self.read_buffer = StringIO()
+        self.sockThread = threading.Thread(target=asyncore.loop)
+        self.sockThread.start()
+        self.logger.debug('CMEB OPEN')
+
+    def connectSocket(self,IP, Port):
+        print("CMEB Connect into")
+        url = IP
+        self.logger = logging.getLogger(url)
+        address = (IP, Port)
+        self.logger.debug('connecting to %s', address)
+        self.connect(address)
+
+    def handle_expt(self):
+        print("expt")
+
+    def handle_error(self):
+        print("err")
+
+    def handle_read(self):
+        pass
+    def handle_connect(self):
+        print("connected CMEB")
 
 class TCPClient(asyncore.dispatcher):
 
@@ -17,6 +47,7 @@ class TCPClient(asyncore.dispatcher):
         self.read_buffer = StringIO()
         self.sockThread = threading.Thread(target=asyncore.loop)
         self.sockThread.start()
+        # self.logger.debug('EGSE OPEN')
 
     def connectSocket(self,IP, Port):
         url = IP
@@ -30,6 +61,7 @@ class TCPClient(asyncore.dispatcher):
 
     def handle_error(self):
         print("err")
+
 """
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG,

@@ -1,5 +1,5 @@
 ('D:\\Source\\EGSE\\EGSE_GUI\\EGSE_CMEB\\dist\\main.exe',
- True,
+ False,
  False,
  False,
  None,
@@ -309,7 +309,7 @@
  [],
  False,
  False,
- 1516880632,
- [('run.exe',
-   'c:\\python_project\\egse_cmeb\\venv\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit\\run.exe',
+ 1516880892,
+ [('runw.exe',
+   'c:\\python_project\\egse_cmeb\\venv\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit\\runw.exe',
    'EXECUTABLE')])

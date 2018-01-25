@@ -100,24 +100,28 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
         self.btn_send_image.setEnabled(False)
         self.btn_read_image.setEnabled(False)
-        self.btn_msg_01.clicked.connect(self.start_clicked)
-        self.window_width = self.ImgWidget.frameSize().width()
-        self.window_height = self.ImgWidget.frameSize().height()
 
-        self.ImgWidget = OwnImageWidget(self.ImgWidget)
-        self.ImgReturn = OwnImageWidget(self.ImgReturn)
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.update_frame)
-        self.timer.start(1)
-
-        self.btn_msg_02.clicked.connect(self.MessageSend1)       #Teset 버튼
+        self.btn_TrigerCameraButton.clicked.connect(self.start_clicked)     #TriggerCamera Button
+        self.btn_GetResultImage.clicked.connect(self.MessageSend1)          #Request Result image Buttton
         self.btn_send_image.clicked.connect(self.ImageSendButtonClicked)    #d이미지 전송 시작
         self.btn_read_image.clicked.connect(self.ImageReadButtonClicked)    #이미지 수신 시작
+        self.btn_CMEB_Power.clicked.connect(self.CMEBPowerOnClicked)        #CMEB Power Switch
+
+        self.window_width = self.ImgWidget.frameSize().width()
+        self.window_height = self.ImgWidget.frameSize().height()
+        self.ImgWidget = OwnImageWidget(self.ImgWidget)
+        self.ImgReturn = OwnImageWidget(self.ImgReturn)
+
+        # self.timer = QtCore.QTimer(self)
+        # self.timer.timeout.connect(self.update_frame)
+        # self.timer.start(1)
+
+
         # self.btn_get_fpa.clicked.connect()
-        self.btn_CMEB_Power.clicked.connect(self.SendSsrOn)
 
 
-    def SendSsrOn(self):
+
+    def CMEBPowerOnClicked(self):
         if not self.isSSR:
             self.write_buffer = "SSR_ON"
         else:
