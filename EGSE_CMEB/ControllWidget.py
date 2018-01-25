@@ -101,8 +101,10 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         self.btn_send_image.setEnabled(False)
         self.btn_read_image.setEnabled(False)
 
-        self.btn_TrigerCameraButton.clicked.connect(self.start_clicked)     #TriggerCamera Button
-        self.btn_GetResultImage.clicked.connect(self.MessageSend1)          #Request Result image Buttton
+
+        self.btn_get_fpa.clicked.connect(self.GetFPAStatus)
+        self.btn_TrigerCameraButton.clicked.connect(self.TriggerCameraClicked)     #TriggerCamera Button
+        self.btn_GetResultImage.clicked.connect(self.GetResultImageClicked)          #Request Result image Buttton
         self.btn_send_image.clicked.connect(self.ImageSendButtonClicked)    #d이미지 전송 시작
         self.btn_read_image.clicked.connect(self.ImageReadButtonClicked)    #이미지 수신 시작
         self.btn_CMEB_Power.clicked.connect(self.CMEBPowerOnClicked)        #CMEB Power Switch
@@ -119,7 +121,23 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
         # self.btn_get_fpa.clicked.connect()
 
+    def TriggerCameraClicked(self):
+        self.write_buffer = "REQ_CAM_START"
+        sent = self.send(self.write_buffer.encode())
+        self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
+        self.write_buffer = self.write_buffer[sent:]
 
+    def GetResultImageClicked(self):
+        self.write_buffer = "GET_RESULT_IMAGE"
+        sent = self.send(self.write_buffer.encode())
+        self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
+        self.write_buffer = self.write_buffer[sent:]
+
+    def GetFPAStatus(self):
+        self.write_buffer = "GET_FPA_STATUS"
+        sent = self.send(self.write_buffer.encode())
+        self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
+        self.write_buffer = self.write_buffer[sent:]
 
     def CMEBPowerOnClicked(self):
         if not self.isSSR:
@@ -350,6 +368,12 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
                 self.isSSR = False
                 self.btn_CMEB_Power.setText("Power ON")
                 self.SetConsoleMessage(str(self.address) + ' ' + 'SSR_OFF')
+            elif data.decode() == "REQ_CAM_START":
+                self.SetConsoleMessage(str(self.address) + ' ' + 'REQ_CAM_START')
+            elif data.decode() == "GET_RESULT_IMAGE":
+                self.SetConsoleMessage(str(self.address) + ' ' + 'GET_RESULT_IMAGE')
+            elif data.decode() == "GET_FPA_STATUS":
+                self.SetConsoleMessage(str(self.address) + ' ' + 'GET_FPA_STATUS')
             else:
                 self.logger.debug('Error')
         elif self.readMode == MODE_CBIT_READ:
