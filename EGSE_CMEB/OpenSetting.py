@@ -8,8 +8,8 @@ class OpenSetting(QWidget, openWidget):
 
     cmebIP = "192.168.10.10"
     cmebPort = 7000
-    egseIP = "192.168.10.222"
-    egsePort = 8000
+    egseIP = "192.168.10.13"
+    egsePort = 70
 
     def __init__(self):
         super().__init__()
