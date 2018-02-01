@@ -16,7 +16,7 @@ class CMEBClient(asyncore.dispatcher):
         self.read_buffer = StringIO()
         self.sockThread = threading.Thread(target=asyncore.loop)
         self.sockThread.start()
-        self.logger.debug('CMEB OPEN')
+        # self.logger.debug('CMEB OPEN')
 
     def connectSocket(self,IP, Port):
         print("CMEB Connect into")
@@ -34,8 +34,12 @@ class CMEBClient(asyncore.dispatcher):
 
     def handle_read(self):
         pass
+
     def handle_connect(self):
-        print("connected CMEB")
+        self.write_buffer = "cmeb connect"
+        sent = self.send(self.write_buffer.encode())
+        self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
+        self.write_buffer = self.write_buffer[sent:]
 
 class TCPClient(asyncore.dispatcher):
 

@@ -27,9 +27,9 @@ class MainWindow(QMainWindow, mainWindowWidget):
         self.isConnect = False
         self.setWindowTitle("CMEB EGSE")
         self.actionOpenImage.triggered.connect(self.OpenImageFile)
-        self.MyControll = ControllWidget.ControlDisplay()
-        # self.socketCMEB = tcp_Client.CMEBClient()
-        self.NewSetting = OpenSetting.OpenSetting()
+        self.MyControll = ControllWidget.ControlDisplay
+        self.socketCMEB = tcp_Client.CMEBClient
+        self.NewSetting = OpenSetting.OpenSetting
 
         self.NewSetting.ConnectButton.clicked.connect(self.btnConnectClicked)  # 설정 완료 버튼 Connect
         self.NewSetting.CancelButton.clicked.connect(self.btnCancelClicked)  # 설정 취소 보튼 Connect
@@ -40,9 +40,9 @@ class MainWindow(QMainWindow, mainWindowWidget):
 
     def CMEBConnectClicked(self):
         print("open clicked")
-        self.logger.debug(self.CMEB_IP)
-        self.logger.debug(self.CMEB_Port)
-        # self.socketCMEB.connectSocket(self.CMEB_IP, self.CMEB_Port)
+        # self.logger.debug(self.CMEB_IP)
+        # self.logger.debug(self.CMEB_Port)
+        self.socketCMEB.connectSocket(self.CMEB_IP, self.CMEB_Port)
 
 
     def OpenImageFile(self):
@@ -68,6 +68,7 @@ class MainWindow(QMainWindow, mainWindowWidget):
             self.NewSetting.close()
             self.showNormal()
             self.setCentralWidget(self.MyControll)
+
 
     def btnCancelClicked(self):
         print("cancel clicked")

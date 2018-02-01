@@ -8,7 +8,7 @@ class OpenSetting(QWidget, openWidget):
 
     cmebIP = "192.168.10.201"
     cmebPort = 70
-    egseIP = "192.168.10.13"
+    egseIP = "192.168.10.14"
     egsePort = 70
 
     def __init__(self):

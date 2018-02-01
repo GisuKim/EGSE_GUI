@@ -98,8 +98,8 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         self.setupUi(self)
         tcp_Client.TCPClient.__init__(self)
 
-        self.btn_send_image.setEnabled(False)
-        self.btn_read_image.setEnabled(False)
+        # self.btn_send_image.setEnabled(False)
+        # self.btn_read_image.setEnabled(False)
 
 
         self.btn_get_fpa.clicked.connect(self.GetFPAStatus)
@@ -108,15 +108,16 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         self.btn_send_image.clicked.connect(self.ImageSendButtonClicked)    #d이미지 전송 시작
         self.btn_read_image.clicked.connect(self.ImageReadButtonClicked)    #이미지 수신 시작
         self.btn_CMEB_Power.clicked.connect(self.CMEBPowerOnClicked)        #CMEB Power Switch
+        self.btn_camera_on.clicked.connect(self.start_clicked)
 
         self.window_width = self.ImgWidget.frameSize().width()
         self.window_height = self.ImgWidget.frameSize().height()
         self.ImgWidget = OwnImageWidget(self.ImgWidget)
         self.ImgReturn = OwnImageWidget(self.ImgReturn)
 
-        # self.timer = QtCore.QTimer(self)
-        # self.timer.timeout.connect(self.update_frame)
-        # self.timer.start(1)
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.update_frame)
+        self.timer.start(1)
 
 
         # self.btn_get_fpa.clicked.connect()
@@ -187,6 +188,7 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         self.img = cv2.imread(self.imageFname[0], 1)                #파일오픈
         self.img = cv2.cvtColor(self.img, cv2.COLOR_BGR2BGR565)     # 컬러포맷 변경
         self.frame["img"] = self.img
+        self.image_Transfrom(self.frame)
         self.ImgWidget.setImage(self.image_Transfrom(self.frame))
         self.SetConsoleMessage(self.imageFname[0] + " is Opened")
         self.btn_send_image.setEnabled(True);
@@ -230,8 +232,8 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         global running
         running = True
         capture_thread.start()
-        self.btn_msg_01.setEnabled(False)
-        self.btn_msg_01.setText('Starting...')
+        self.btn_camera_on.setEnabled(False)
+        self.btn_camera_on.setText('Starting...')
 
     def image_Transfrom(self, image):
         img = image["img"]
@@ -258,7 +260,7 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
     def update_frame(self):
 
         if not q.empty():
-            self.btn_msg_01.setText('Camera is live')
+            # self.btn_msg_01.setText('Camera is live')
             frame = q.get()
             # img = frame["img"]
             #
@@ -287,7 +289,7 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         print("connected")
         self.isConnect = True       #Socket이 Serverdp Access 되었음을 알린다.
         self.SetConsoleMessage(str(self.address) + ' ' + 'New Connection')
-        self.logger.debug('handle_connect()')
+        # self.logger.debug('handle_connect()')
         # self.readMode = MODE_CBIT_READ
         # self.thTimer = threading.Timer(1, self.SendGetCmebStatusMessage)
         # self.thTimer.start()
