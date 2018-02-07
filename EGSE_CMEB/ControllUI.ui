@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1039</width>
-    <height>583</height>
+    <height>591</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -282,7 +282,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Tigger Camera</string>
+                    <string>RE_RX_IMAGE</string>
                    </property>
                   </widget>
                  </item>
@@ -295,7 +295,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Get Result Image</string>
+                    <string>SERDES_STATUS</string>
                    </property>
                   </widget>
                  </item>
@@ -308,7 +308,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Get FPA Status</string>
+                    <string>REQ_CAMj_START</string>
                    </property>
                   </widget>
                  </item>

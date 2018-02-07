@@ -26,10 +26,30 @@ class MainWindow(QMainWindow, mainWindowWidget):
                             )
         self.isConnect = False
         self.setWindowTitle("CMEB EGSE")
+
+        # self.statusBar().showMessage('ready')
+        self.status = QStatusBar()
+        self.setStatusBar(self.status)
+
+        self.progressBar = QProgressBar()
+        self.lb_cmebInfo = QLabel()
+        self.lb_egseInfo = QLabel()
+
+
+        self.statusBar().addPermanentWidget(self.progressBar)
+        self.statusBar().addPermanentWidget(self.lb_cmebInfo)
+        self.statusBar().addPermanentWidget(self.lb_egseInfo)
+
+        self.lb_cmebInfo.setText('CMEB IP : 192.168.10.1 Port : 70')
+        self.lb_egseInfo.setText('EGSE IP : 192.168.10.2 Port : 80')
+        self.progressBar.setGeometry(0, 0, 50, 25)
+        self.progressBar.setValue(0)
+
+
+
         self.actionOpenImage.triggered.connect(self.OpenImageFile)
-        self.MyControll = ControllWidget.ControlDisplay
-        self.socketCMEB = tcp_Client.CMEBClient
-        self.NewSetting = OpenSetting.OpenSetting
+        self.MyControll = ControllWidget.ControlDisplay()
+        self.NewSetting = OpenSetting.OpenSetting()
 
         self.NewSetting.ConnectButton.clicked.connect(self.btnConnectClicked)  # 설정 완료 버튼 Connect
         self.NewSetting.CancelButton.clicked.connect(self.btnCancelClicked)  # 설정 취소 보튼 Connect
@@ -40,10 +60,12 @@ class MainWindow(QMainWindow, mainWindowWidget):
 
     def CMEBConnectClicked(self):
         print("open clicked")
+        self.socketCMEB = tcp_Client.CMEBClient()
+        self.socketCMEB.control = self.MyControll
+        self.MyControll.cmebinst = self.socketCMEB
         # self.logger.debug(self.CMEB_IP)
         # self.logger.debug(self.CMEB_Port)
         self.socketCMEB.connectSocket(self.CMEB_IP, self.CMEB_Port)
-
 
     def OpenImageFile(self):
         print("open clicked")
@@ -74,3 +96,8 @@ class MainWindow(QMainWindow, mainWindowWidget):
         print("cancel clicked")
         self.showNormal()
         self.NewSetting.close()
+
+    def closeEvent(self, *args, **kwargs):
+        del self.MyControll
+        del self.socketCMEB
+        del self

@@ -16,10 +16,13 @@ ControlWidget = uic.loadUiType("ControllUI.ui")[0]
 q = queue.Queue()
 sendq = queue.Queue()
 
-FRAME_WIDTH = 320
-FRAME_HEIGHT = 240
+FRAME_WIDTH = 2048
+FRAME_HEIGHT = 2048
 CHANNEL = 2       #16BIT BGR565
 IMAGE_SIZE = FRAME_WIDTH * FRAME_HEIGHT * CHANNEL
+
+TCP_TxLOOP = 32
+TCP_TxLen = (FRAME_WIDTH*FRAME_HEIGHT*CHANNEL)/TCP_TxLOOP
 
 ICON_RED_LED = "icon/led-red-on.png"
 ICON_GREEN_LED = "icon/green-led-on.png"
@@ -91,6 +94,8 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
     myWindow = QMainWindow
     imageReadCNT = 0
     receiveImage = b''
+    cmebinst = None
+
 
     ## Constructor
     def __init__(self):
@@ -123,19 +128,25 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         # self.btn_get_fpa.clicked.connect()
 
     def TriggerCameraClicked(self):
-        self.write_buffer = "REQ_CAM_START"
-        sent = self.send(self.write_buffer.encode())
-        self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
-        self.write_buffer = self.write_buffer[sent:]
+        # self.write_buffer = "REQ_CAM_START"
+        # sent = self.send(self.write_buffer.encode())
+        # self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
+        # self.write_buffer = self.write_buffer[sent:]
+
+        self.cmebinst.write_buffer = "RE_RX_IMAGE"
+        sent = self.cmebinst.send(self.cmebinst.write_buffer.encode())
+        self.logger.debug('handle_write() -> "%s"', self.cmebinst.write_buffer[:sent])
+        self.cmebinst.write_buffer = self.cmebinst.write_buffer[sent:]
 
     def GetResultImageClicked(self):
-        self.write_buffer = "GET_RESULT_IMAGE"
+        # self.write_buffer = "GET_RESULT_IMAGE"
+        self.write_buffer = "ENABLE_SERDES"
         sent = self.send(self.write_buffer.encode())
         self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
         self.write_buffer = self.write_buffer[sent:]
 
     def GetFPAStatus(self):
-        self.write_buffer = "GET_FPA_STATUS"
+        self.write_buffer = "REQ_CAM_START"
         sent = self.send(self.write_buffer.encode())
         self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
         self.write_buffer = self.write_buffer[sent:]
@@ -172,6 +183,12 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
     ## 불러온 이미지 파일을 전송 하기 위하여 메세지를 전송한다.
     #  @param self The object pointer.
     def ImageSendButtonClicked(self):
+        self.timer.stop()
+        if not q.empty():
+            # self.btn_msg_01.setText('Camera is live')
+            frame = q.get()
+            self.ImgWidget.setImage(self.image_Transfrom(frame))
+            self.img = frame["img"]
         self.write_buffer = "RX_IMAGE"
         sent = self.send(self.write_buffer.encode())
         self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
@@ -185,26 +202,38 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
 
     def ShowOpenImage(self):
-        self.img = cv2.imread(self.imageFname[0], 1)                #파일오픈
-        self.img = cv2.cvtColor(self.img, cv2.COLOR_BGR2BGR565)     # 컬러포맷 변경
+        self.img = cv2.imread(self.imageFname[0], 1)                 #파일오픈
+        self.img = cv2.cvtColor(self.img, cv2.COLOR_BGR2BGR565)      #컬러포맷 변경 3byte->2byte
+        # cv2.imshow('1', cv2.cvtColor(self.img, cv2.COLOR_BGR5652BGR))
+        img_height, img_width, img_colors = self.img.shape           #이미지의 크기 및 컬러 포맷을 가져옴
+        scale_w = float(FRAME_WIDTH) / float(img_width)              #목표 크기와 읽은 파일의 배율을 얻는다.
+        scale_h = float(FRAME_HEIGHT) / float(img_height)
+        self.img = cv2.resize(self.img, None, fx=scale_w, fy=scale_h, interpolation=cv2.INTER_AREA)    #전송할 이미지의 크기를 변경한다.
+        # cv2.imshow('2', cv2.cvtColor(self.img, cv2.COLOR_BGR5652BGR))
+        print(self.img.shape)
         self.frame["img"] = self.img
-        self.image_Transfrom(self.frame)
-        self.ImgWidget.setImage(self.image_Transfrom(self.frame))
-        self.SetConsoleMessage(self.imageFname[0] + " is Opened")
-        self.btn_send_image.setEnabled(True);
+        self.ImgWidget.setImage(self.image_Transfrom(self.frame))   #이미지 표시 위젯에 불러들인 이미지를 표시한다.
+        self.SetConsoleMessage(self.imageFname[0] + " is Opened")   #파일이 정상적으로 오픈되었음을 콘솔에 표시
+        self.btn_send_image.setEnabled(True);                       #전송버튼을 활성화 한다.
 
     ## 이미지를 불러와 전송 한다.
     #  @param self The object pointer.
     def ImageSendStart(self):
-        # self.img = cv2.imread(self.imageFname[0], 1)            #파일오픈
-        # self.img = cv2.cvtColor(self.img, cv2.COLOR_RGB2BGR565)    # 컬러포맷 변경 3->2byte
         img_height, img_width, img_colors = self.img.shape           #이미지의 크기 및 컬러 포맷을 가져옴
-        scale_w = float(FRAME_WIDTH) / float(img_width)   #위젯의 윈도우 크기 대비 이미지의 스케일을 계산한다.
+        scale_w = float(FRAME_WIDTH) / float(img_width)              #위젯의 윈도우 크기 대비 이미지의 스케일을 계산한다.
         scale_h = float(FRAME_HEIGHT) / float(img_height)
         self.img = cv2.resize(self.img, None, fx=scale_w, fy=scale_h, interpolation=cv2.INTER_CUBIC)
         self.logger.debug(self.img.shape)
+
         if len(self.img) > 0:
             data = numpy.array(self.img)                        # conversion numpy array
+            # data1D = data.reshape(TCP_TxLOOP, (TCP_TxLen))
+            # # tx image loop
+            # for i in range(0, TCP_TxLOOP):
+            #     stringData = data1D[i, :].tostring()  # (2048x2048x2)/ 32 conversion numpy to string
+            #     print(' send image array ..  ')
+            #     client_socket.send(stringData);
+            #     self.write_buffer =
             self.write_buffer = data.tostring()                 # conversion numpy to string
             try:
                 self.SetConsoleMessage(str(sys.getsizeof(self.write_buffer)))
@@ -237,25 +266,21 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
     def image_Transfrom(self, image):
         img = image["img"]
-        img_height, img_width, img_colors = img.shape           #이미지의 크기 및 컬러 포맷을 가져옴
-        scale_w = float(FRAME_WIDTH) / float(img_width)   #위젯의 윈도우 크기 대비 이미지의 스케일을 계산한다.
-        scale_h = float(FRAME_HEIGHT) / float(img_height)
-        # scale = max([scale_w, scale_h])                         #가로와 세로 스케일중 작은 값에 따른다
-        #
-        # if scale == 0:
-        #     scale = 1
-        # shrink = cv2.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
-        print('이미지 사이즈까진 가져오고 ')
-        img = cv2.resize(img, None, fx=scale_w, fy=scale_h, interpolation=cv2.INTER_CUBIC)
-        print('사이즈 까지 변경 해쏙 ')
-
+        img_height, img_width, img_colors = img.shape               #이미지의 크기 및 컬러 포맷을 가져옴
+        scale_w = float(self.window_width) / float(img_width)       #표시할 파일 크기로 배율을 계산한다.
+        scale_h = float(self.window_height) / float(img_height)
+        scale = min([scale_w, scale_h])
+        # cv2.imshow('tst', cv2.cvtColor(img, cv2.COLOR_BGR5652BGR))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR5652BGR)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)      #표시할 이미지 크기를 조정한다.
         height, width, bpc = img.shape
         bpl = bpc * width
         self.logger.debug('Image Forrmat show')
         self.logger.debug(width)
         self.logger.debug(height)
         self.logger.debug(bpl)
-        return QtGui.QImage(img.data, width, height, bpl, QtGui.QImage.Format_RGB16)
+        return QtGui.QImage(img.data, width, height, bpl, QtGui.QImage.Format_RGB888)
 
     def update_frame(self):
 
@@ -286,7 +311,7 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         running = False
 
     def handle_connect(self):
-        print("connected")
+        print("egse connected")
         self.isConnect = True       #Socket이 Serverdp Access 되었음을 알린다.
         self.SetConsoleMessage(str(self.address) + ' ' + 'New Connection')
         # self.logger.debug('handle_connect()')
@@ -301,9 +326,6 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         self.thTimer.cancel()
         self.close()
         self.sockThread.join()
-
-
-
 
     # def writable(self):
     #     is_writable = (len(self.write_buffer) > 0)
@@ -343,13 +365,22 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         k = 2
         j = cameraFeed.shape[1]
         i = cameraFeed.shape[0]
-        self.logger.debug('1')
         sockData = np.fromstring(sockData, np.uint8)
-        self.logger.debug('2')
         cameraFeed = np.tile(sockData, 1).reshape((i, j, k))
-        self.logger.debug('3')
 
         return cameraFeed
+
+    def DataToImage(self, data):
+        shape = (FRAME_HEIGHT, FRAME_WIDTH, CHANNEL)
+        cameraFeed = np.zeros(shape, np.uint8)
+        print(len(data))
+        cameraFeed = self.socketToNumpy(cameraFeed, data)
+        # cameraFeed = cv2.cvtColor(cameraFeed, cv2.COLOR_BGR5652BGR)  # 컬러포맷 변경
+        # cameraFeed = cv2.cvtColor(cameraFeed, cv2.COLOR_BGR2RGB)
+        return  cameraFeed
+
+    def Test(self):
+        print('이것은 테스트임')
 
     def handle_read(self):
         data = self.recv(8192)
@@ -391,25 +422,21 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
                     self.imageReadCNT += len(data)
                     self.logger.debug('read image size : %d  -- read size : %d', IMAGE_SIZE, self.imageReadCNT)
                     if(self.imageReadCNT == IMAGE_SIZE):
-                        shape = (FRAME_HEIGHT, FRAME_WIDTH, CHANNEL)
-                        cameraFeed = np.zeros(shape, np.uint8)
-                        print('size of Image: ')
-                        print(len(self.receiveImage))
-                        cameraFeed = self.socketToNumpy(cameraFeed, self.receiveImage)
+
+                        img = self.DataToImage(self.receiveImage)
                         self.receiveImage = b''
-                        # cameraFeed = cv2.cvtColor(cameraFeed, cv2.COLOR_BGR5652BGR)  # 컬러포맷 변경
                         self.readMode = MODE_MESSAGE_READ
                         self.imageReadCNT = 0
-                        # self.frame["img"] = cameraFeed
-                        print('camerafeed ok ')
-                        cameraFeed = cv2.resize(cameraFeed, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
-                        print('cv check ')
-                        height, width, bpc = cameraFeed.shape
-                        print(cameraFeed.shape)
-                        bpl = bpc * width
-                        self.ImgReturn.setImage(QtGui.QImage(cameraFeed.data, FRAME_WIDTH, FRAME_HEIGHT, bpl, QtGui.QImage.Format_RGB16))
-                        print('display check ')
-                        # cv2.imshow('from image echo SERVER', cv2.cvtColor(cameraFeed, cv2.COLOR_BGR5652BGR))
+
+                        img = cv2.resize(img, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
+                        # height, width, bpc = img.shape
+                        # print(img.shape)
+                        # bpl = bpc * width
+                        frame  ={}
+                        frame["img"] = img
+                        self.ImgReturn.setImage(self.image_Transfrom(self.frame))
+                        # print('display check ')
+                        # cv2.imshow('from image echo SERVER', cv2.cvtColor(img, cv2.COLOR_BGR5652BGR))
                         # cv2.waitKey(0)
                         # cv2.destroyAllWindows()
 
