@@ -27,7 +27,7 @@ class MainWindow(QMainWindow, mainWindowWidget):
         self.isConnect = False
         self.setWindowTitle("CMEB EGSE")
 
-        # self.statusBar().showMessage('ready')
+        self.statusBar().showMessage('ready')
         self.status = QStatusBar()
         self.setStatusBar(self.status)
 
@@ -62,7 +62,9 @@ class MainWindow(QMainWindow, mainWindowWidget):
         print("open clicked")
         self.socketCMEB = tcp_Client.CMEBClient()
         self.socketCMEB.control = self.MyControll
+        self.socketCMEB.mainWindow = self
         self.MyControll.cmebinst = self.socketCMEB
+        self.socketCMEB.mainWindow = self
         # self.logger.debug(self.CMEB_IP)
         # self.logger.debug(self.CMEB_Port)
         self.socketCMEB.connectSocket(self.CMEB_IP, self.CMEB_Port)
@@ -87,6 +89,7 @@ class MainWindow(QMainWindow, mainWindowWidget):
         self.CMEB_Port = adress[1]
         time.sleep(1)
         if self.MyControll.isConnect:
+            self.MyControll.mainWindow = self
             self.NewSetting.close()
             self.showNormal()
             self.setCentralWidget(self.MyControll)

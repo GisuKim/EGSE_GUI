@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1039</width>
-    <height>591</height>
+    <height>642</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -337,19 +337,6 @@
      </widget>
      <widget class="QWidget" name="gridLayoutWidget_2">
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="6" column="0">
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBox">
          <property name="font">
@@ -637,6 +624,26 @@
          </layout>
         </widget>
        </item>
+       <item row="7" column="0">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="5" column="0">
+        <widget class="QPushButton" name="btn_camera_on">
+         <property name="text">
+          <string>Camera Capture</string>
+         </property>
+        </widget>
+       </item>
        <item row="3" column="0">
         <widget class="QGroupBox" name="groupBox_2">
          <property name="font">
@@ -879,10 +886,10 @@
          </layout>
         </widget>
        </item>
-       <item row="5" column="0">
-        <widget class="QPushButton" name="btn_camera_on">
+       <item row="6" column="0">
+        <widget class="QPushButton" name="pushButton_3">
          <property name="text">
-          <string>Camera Capture</string>
+          <string>Receive Image Clear</string>
          </property>
         </widget>
        </item>

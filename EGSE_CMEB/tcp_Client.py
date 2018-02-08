@@ -24,13 +24,14 @@ class CMEBClient(asyncore.dispatcher):
 
     address = ()
     control = None
+    mainWindow = None
     imageReadCNT = 0
     receiveImage = b''
 
     def __init__(self):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.write_buffer = 'hellow'
+        self.write_buffer = b''
         self.read_buffer = StringIO()
         self.sockThread = threading.Thread(target=asyncore.loop)
         self.sockThread.start()
@@ -99,29 +100,22 @@ class CMEBClient(asyncore.dispatcher):
                     self.receiveImage += data
                     self.imageReadCNT += len(data)
                     self.logger.debug('read image size : %d  -- read size : %d', IMAGE_SIZE, self.imageReadCNT)
-                    print(self.imageReadCNT)
+                    self.mainWindow.progressBar.setValue((self.imageReadCNT/IMAGE_SIZE)*100)
+                    self.mainWindow.statusBar().showMessage('CMEB -> PC Image Sending..')
                     if (self.imageReadCNT == IMAGE_SIZE):
-                        print('수신완료됨')
+                        self.mainWindow.statusBar().showMessage('CMEB -> PC Send Complet')
                         print(self.imageReadCNT)
                         self.readMode = MODE_MESSAGE_READ
                         self.imageReadCNT = 0
-                        print('이미지 변환 전')
                         img = self.control.DataToImage(self.receiveImage)
-                        print('이미지 변환 됨')
                         self.receiveImage = b''
                         img = cv2.resize(img, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
                         frame  ={}
                         frame["img"] = img
-                        # cv2.imshow('result', img)
-                        print('영상 출력 되야함 ')
                         self.control.ImgReturn.setImage(self.control.image_Transfrom(frame))
-                        print('이미지 출력 완료 됨')
 
     def handle_connect(self):
-        self.write_buffer = "cmeb connect"
-        sent = self.send(self.write_buffer.encode())
-        self.logger.debug('handle_write() -> "%s"', self.write_buffer[:sent])
-        self.write_buffer = self.write_buffer[sent:]
+        self.mainWindow.statusBar().showMessage('CMEB Connected')
 
 class TCPClient(asyncore.dispatcher):
 

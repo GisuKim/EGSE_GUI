@@ -95,7 +95,10 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
     imageReadCNT = 0
     receiveImage = b''
     cmebinst = None
-
+    mainWindow = None
+    capture_thread = None
+    q = queue.Queue()
+    sendq = queue.Queue()
 
     ## Constructor
     def __init__(self):
@@ -113,7 +116,7 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         self.btn_send_image.clicked.connect(self.ImageSendButtonClicked)    #d이미지 전송 시작
         self.btn_read_image.clicked.connect(self.ImageReadButtonClicked)    #이미지 수신 시작
         self.btn_CMEB_Power.clicked.connect(self.CMEBPowerOnClicked)        #CMEB Power Switch
-        self.btn_camera_on.clicked.connect(self.start_clicked)
+        self.btn_camera_on.clicked.connect(self.CAM_Start_Clicked)
 
         self.window_width = self.ImgWidget.frameSize().width()
         self.window_height = self.ImgWidget.frameSize().height()
@@ -126,6 +129,50 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
 
         # self.btn_get_fpa.clicked.connect()
+
+    def grab(self, cam, queue, sendqueue, width, height, fps):
+        global running
+        capture = cv2.VideoCapture(cam)
+        capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        capture.set(cv2.CAP_PROP_FPS, fps)
+        print("camera Ready")
+        while (running):
+            frame = {}
+            capture.grab()
+            retval, img = capture.retrieve(0)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2BGR565)  # 컬러포맷 변경 3->2 byte
+            frame["img"] = img
+
+            print(img.shape)
+
+            if queue.qsize() < 10:
+                queue.put(frame)
+            else:
+                print(queue.qsize())
+
+            if sendqueue.qsize() < 10:
+                sendqueue.put(frame)
+            else:
+                print(sendqueue.qsize())
+
+
+
+    def CAM_Start_Clicked(self):
+        global running
+
+        if not running:
+            running = True
+            self.capture_thread = threading.Thread(target=self.grab, args=(0, self.q, self.sendq, 320, 240, 1))
+            self.capture_thread.start()
+            # self.btn_camera_on.setEnabled(False)
+            self.btn_camera_on.setText('Starting...')
+        else:
+            running = False
+            self.capture_thread.join()
+            # self.btn_camera_on.setEnabled(False)
+            self.btn_camera_on.setText('Camera Capture')
+
 
     def TriggerCameraClicked(self):
         # self.write_buffer = "REQ_CAM_START"
@@ -257,13 +304,6 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
         msg = 'testtest'
         self.send(msg.encode())
 
-    def start_clicked(self):
-        global running
-        running = True
-        capture_thread.start()
-        self.btn_camera_on.setEnabled(False)
-        self.btn_camera_on.setText('Starting...')
-
     def image_Transfrom(self, image):
         img = image["img"]
         img_height, img_width, img_colors = img.shape               #이미지의 크기 및 컬러 포맷을 가져옴
@@ -284,9 +324,9 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
     def update_frame(self):
 
-        if not q.empty():
+        if not self.q.empty():
             # self.btn_msg_01.setText('Camera is live')
-            frame = q.get()
+            frame = self.q.get()
             # img = frame["img"]
             #
             # img_height, img_width, img_colors = img.shape
@@ -421,17 +461,16 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
                     self.receiveImage += data
                     self.imageReadCNT += len(data)
                     self.logger.debug('read image size : %d  -- read size : %d', IMAGE_SIZE, self.imageReadCNT)
+                    self.mainWindow.progressBar.setValue((self.imageReadCNT/IMAGE_SIZE)*100)
+                    self.mainWindow.statusBar().showMessage('EGSE -> PC Image Sending..')
                     if(self.imageReadCNT == IMAGE_SIZE):
-
+                        self.mainWindow.statusBar().showMessage('EGSE -> PC Send Complet', 3)
                         img = self.DataToImage(self.receiveImage)
                         self.receiveImage = b''
                         self.readMode = MODE_MESSAGE_READ
                         self.imageReadCNT = 0
 
                         img = cv2.resize(img, None, fx=1, fy=1, interpolation=cv2.INTER_CUBIC)
-                        # height, width, bpc = img.shape
-                        # print(img.shape)
-                        # bpl = bpc * width
                         frame  ={}
                         frame["img"] = img
                         self.ImgReturn.setImage(self.image_Transfrom(self.frame))
@@ -442,4 +481,4 @@ class ControlDisplay(QWidget, ControlWidget, tcp_Client.TCPClient):
 
         # self.read_buffer.write(data)
 
-capture_thread = threading.Thread(target=grab, args = (0, q, sendq, 320, 240, 1))
+# capture_thread = threading.Thread(target=grab, args = (0, q, sendq, 320, 240, 1))
